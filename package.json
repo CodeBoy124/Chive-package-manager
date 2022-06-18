@@ -1,0 +1,28 @@
+{
+  "name": "chive-package-manager",
+  "version": "1.0.0",
+  "description": "A package manager for the Chive programming language made by @sverigeunit",
+  "main": "bin/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "cpm": "./bin/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CodeBoy124/Chive-package-manager.git"
+  },
+  "keywords": [
+    "cli",
+    "chive",
+    "package",
+    "manager"
+  ],
+  "author": "CodeBoy124",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CodeBoy124/Chive-package-manager/issues"
+  },
+  "homepage": "https://github.com/CodeBoy124/Chive-package-manager#readme"
+}
