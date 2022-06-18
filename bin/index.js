@@ -28,6 +28,10 @@ if(COM.toLowerCase() == "nebula"){
                 message: 'What is the name for you package?'
             },
             {
+                name: 'description',
+                message: 'Can you give a description of what this package does?'
+            },
+            {
                 name: 'author',
                 message: 'Who is the author of this package?'
             },
@@ -39,6 +43,7 @@ if(COM.toLowerCase() == "nebula"){
         ])
         .then(answers => {
             data.name = answers.name;
+            data.description = answers.description;
             data.author = answers.author;
             data.main = answers.entrypoint;
             data.packages = [];
@@ -52,6 +57,7 @@ if(COM.toLowerCase() == "nebula"){
     fs.writeFileSync("nebula.conf.json", JSON.stringify({
         name: "my package",
         author: "nebula cli",
+        description: "A very good package!",
         packages: [],
         includes: [],
         scripts: {}
