@@ -3,6 +3,7 @@ const fs = require('fs');
 const inquirer = require('inquirer');
 const path = require('path');
 const axios = require('axios');
+const { exec } = require("child_process");
 
 var args = process.argv.slice(2);
 
@@ -42,6 +43,7 @@ if(COM.toLowerCase() == "nebula"){
             data.main = answers.entrypoint;
             data.packages = [];
             data.includes = [];
+            data.scripts = {};
             fs.writeFileSync(path.join(process.cwd(),"nebula.conf.json"), JSON.stringify(data, null, 2));
             console.log("nebula.conf.json file created");
         });
@@ -51,7 +53,8 @@ if(COM.toLowerCase() == "nebula"){
         name: "my package",
         author: "nebula cli",
         packages: [],
-        includes: []
+        includes: [],
+        scripts: {}
     }, null, 2));
     console.log("default init sucess");
 }else if(com(2).toLowerCase() == "nebula install"){
@@ -123,7 +126,20 @@ if(COM.toLowerCase() == "nebula"){
     fs.unlinkSync(path.join(process.cwd(), "./chive_packages/"+packageName+".ch"));
     console.log("package succesfully uninstalled");
 }else if(com(2).toLowerCase() == "nebula run"){
+    var scriptName = args.slice(2).join(' ');
+    var configData = JSON.parse(fs.readFileSync("nebula.conf.json", 'utf8'));
     console.log("running script "+args.slice(2).join(' '));
+    exec(configData.scripts[scriptName], (error, stdout, stderr) => {
+        if (error) {
+            console.log(`error: ${error.message}`);
+            return;
+        }
+        if (stderr) {
+            console.log(`stderr: ${stderr}`);
+            return;
+        }
+        console.log(stdout);
+    });
 }else if(com(2).toLowerCase() == "nebula login"){
     console.log("loging in for "+args.slice(2).join(' '));
 }else if(com(2).toLowerCase() == "nebula logout"){
