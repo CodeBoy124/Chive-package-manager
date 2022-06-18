@@ -64,12 +64,6 @@ if(COM.toLowerCase() == "nebula"){
     }, null, 2));
     console.log("default init sucess");
 }else if(com(2).toLowerCase() == "nebula install"){
-    var packageName = args.slice(2).join(' ');
-    var currentData = JSON.parse(fs.readFileSync("nebula.conf.json", 'utf8'));
-    currentData.packages.push(packageName);
-    fs.writeFileSync("nebula.conf.json", JSON.stringify(currentData, null, 2));
-    console.log(packageName+" added to nebula.conf.json");
-
     axios
         .get('http://localhost:3000/packages/'+packageName)
         .then(res => {
@@ -81,6 +75,18 @@ if(COM.toLowerCase() == "nebula"){
                     fs.writeFileSync(path.join(process.cwd(), "./chive_packages/"+packageName+".ch"), res.data);
                 }
                 console.log("package is succesfully installed");
+                var packageName = args.slice(2).join(' ');
+
+                var currentData = JSON.parse(fs.readFileSync("nebula.conf.json", 'utf8'));
+                currentData.packages.push(packageName);
+                fs.writeFileSync("nebula.conf.json", JSON.stringify(currentData, null, 2));
+                console.log(packageName+" added to nebula.conf.json");
+
+                if(fs.existsSync(path.join(process.cwd(), "./include.ch"))){
+                    var currentInclude = fs.readFileSync(path.join(process.cwd(), "./include.ch"), 'utf8');
+                    fs.writeFileSync(path.join(process.cwd(), "./include.ch"), currentInclude+"\n"+packageName+".ch");
+                    console.log(packageName+"added to include.ch");
+                }
             }else{
                 console.log("Error: server send a "+res.status+" status code");
             }
@@ -98,12 +104,6 @@ if(COM.toLowerCase() == "nebula"){
     fs.unlinkSync(path.join(process.cwd(), "./chive_packages/"+packageName+".ch"));
     console.log("package succesfully uninstalled");
 }else if(com(2).toLowerCase() == "nebula i"){
-    var packageName = args.slice(2).join(' ');
-    var currentData = JSON.parse(fs.readFileSync("nebula.conf.json", 'utf8'));
-    currentData.packages.push(packageName);
-    fs.writeFileSync("nebula.conf.json", JSON.stringify(currentData, null, 2));
-    console.log(packageName+" added to nebula.conf.json");
-
     axios
         .get('http://localhost:3000/packages/'+packageName)
         .then(res => {
@@ -115,6 +115,18 @@ if(COM.toLowerCase() == "nebula"){
                     fs.writeFileSync(path.join(process.cwd(), "./chive_packages/"+packageName+".ch"), res.data);
                 }
                 console.log("package is succesfully installed");
+                var packageName = args.slice(2).join(' ');
+                
+                var currentData = JSON.parse(fs.readFileSync("nebula.conf.json", 'utf8'));
+                currentData.packages.push(packageName);
+                fs.writeFileSync("nebula.conf.json", JSON.stringify(currentData, null, 2));
+                console.log(packageName+" added to nebula.conf.json");
+
+                if(fs.existsSync(path.join(process.cwd(), "./include.ch"))){
+                    var currentInclude = fs.readFileSync(path.join(process.cwd(), "./include.ch"), 'utf8');
+                    fs.writeFileSync(path.join(process.cwd(), "./include.ch"), currentInclude+"\n"+packageName+".ch");
+                    console.log(packageName+"added to include.ch");
+                }
             }else{
                 console.log("Error: server send a "+res.status+" status code");
             }
