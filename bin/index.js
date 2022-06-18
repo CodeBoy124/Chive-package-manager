@@ -1,9 +1,7 @@
 #! /usr/bin/env node
 var args = process.argv.slice(2);
 
-console.log(process.argv[1]);
-
-args = ["cpm", ...args];
+args = ["nebula", ...args];
 
 var COM = args.join(' ');
 
@@ -11,51 +9,51 @@ function com(amount){
     return args.slice(0, amount).join(' ');
 }
 
-if(COM.toLowerCase() == "cpm"){
-    console.log("just cpm");
-}else if(COM.toLowerCase() == "cpm help"){
+if(COM.toLowerCase() == "nebula"){
+    console.log("just nebula");
+}else if(COM.toLowerCase() == "nebula help"){
     console.log("help");
-}else if(COM.toLowerCase() == "cpm init"){
+}else if(COM.toLowerCase() == "nebula init"){
     console.log("just init");
-}else if(COM.toLowerCase() == "cpm init auto"){
+}else if(COM.toLowerCase() == "nebula init auto"){
     console.log("default init");
-}else if(com(2).toLowerCase() == "cpm install"){
+}else if(com(2).toLowerCase() == "nebula install"){
     console.log("installing "+args.slice(2).join(' '));
-}else if(com(2).toLowerCase() == "cpm uninstall"){
+}else if(com(2).toLowerCase() == "nebula uninstall"){
     console.log("uninstalling "+args.slice(2).join(' '));
-}else if(com(2).toLowerCase() == "cpm i"){
+}else if(com(2).toLowerCase() == "nebula i"){
     console.log("installing "+args.slice(2).join(' '));
-}else if(com(2).toLowerCase() == "cpm ui"){
+}else if(com(2).toLowerCase() == "nebula ui"){
     console.log("uninstalling "+args.slice(2).join(' '));
-}else if(com(2).toLowerCase() == "cpm run"){
+}else if(com(2).toLowerCase() == "nebula run"){
     console.log("running script "+args.slice(2).join(' '));
-}else if(com(2).toLowerCase() == "cpm login"){
+}else if(com(2).toLowerCase() == "nebula login"){
     console.log("loging in for "+args.slice(2).join(' '));
-}else if(com(2).toLowerCase() == "cpm logout"){
+}else if(com(2).toLowerCase() == "nebula logout"){
     console.log("logout for "+args.slice(2).join(' '));
-}else if(COM.toLowerCase() == "cpm publish"){
+}else if(COM.toLowerCase() == "nebula publish"){
     console.log("publishing this package");
 }else{
     console.log("not a valid command");
 }
 
 /*
-cpm
-cpm help
+nebula
+nebula help
 
-cpm init
-cpm init auto
+nebula init
+nebula init auto
 
-cpm install aPackage
-cpm uninstall aPackage
+nebula install aPackage
+nebula uninstall aPackage
 
-cpm i aPackage
-cpm ui aPackage
+nebula i aPackage
+nebula ui aPackage
 
-cpm run scriptName
+nebula run scriptName
 
-cpm login UserName
-cpm logout
+nebula login UserName
+nebula logout
 
-cpm publish
+nebula publish
 */
