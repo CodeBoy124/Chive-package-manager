@@ -9,6 +9,7 @@ const { exec } = require("child_process");
 const nebulaConfigPath = path.join(process.cwd(), "./nebula.conf.json");
 const chivePackagesPath = path.join(process.cwd(), "./chive_packages/");
 const includeFilePath = path.join(process.cwd(), "./include.ch");
+const claimKeyPath = path.join(process.cwd(), "./claim.secret");
 const apiHost = "localhost:3000/";
 
 // get command that is being triggered
@@ -45,7 +46,7 @@ if (COM.toLowerCase() == "nebula") {
   runConfigScript(scriptName);
 } else if (COM.toLowerCase() == "nebula publish") {
   // NEEDS TO BE DONE LATER ON
-  console.log("publishing this package");
+  publish();
 } else {
   console.log(
     `${COM} is not a valid command.\nrun 'nebula' or 'nebula help' for help`
@@ -69,14 +70,21 @@ nebula ui aPackage
 
 nebula run scriptName
 
-(nebula claim) will be used inside nebula publish and claims a title
+(nebula claim) will be used inside nebula publish and claims a title. this will use the sha3-512 hashing algorithm on the server
 nebula publish
+
+```javascript
+const crypto = require('crypto');
+var hashedKey = crypto.createHash("sha3-512").update(SomeKey).digest("hex")
+```
+
+
 */
 
 function apiRoute(apiPath) {
-  return "http://"+path.join(apiHost, apiPath);
+  return "http://" + path.join(apiHost, apiPath);
 }
-function localPackage(packageName){
+function localPackage(packageName) {
   return path.join(chivePackagesPath, packageName);
 }
 
@@ -86,10 +94,10 @@ var SUCCESS = 1,
 function setNebulaConfig(jsonData) {
   try {
     fs.writeFileSync(nebulaConfigPath, JSON.stringify(jsonData, null, 2));
-    return 1; // means success
+    return SUCCESS; // means success
   } catch (error) {
     console.log("error: failed to write to nebula.conf.json");
-    return 0; // means failure
+    return FAIL; // means failure
   }
 }
 function getNebulaConfig() {
@@ -103,6 +111,113 @@ function getNebulaConfig() {
       scripts: {},
     }
   );
+}
+
+function setPackageKey(key) {
+  try {
+    fs.writeFileSync(claimKeyPath, key.toString());
+    return SUCCESS;
+  } catch (error) {
+    return FAIL;
+  }
+}
+
+function claim(name) {
+  return new Promise((resolve, reject) => {
+    axios
+      .post(apiRoute("claimpackage/" + name))
+      .then((res) => {
+        if (res.status >= 200 && res.status < 300) {
+          if (res.data == "-2") {
+            console.log("Error: Server could not save the key");
+            reject();
+          } else if (res.data == "-1") {
+            console.log("Error: Package is already claimed");
+            reject();
+          } else {
+            var key = parseInt(res.data);
+            console.log(`Success: The package name is claimed.`);
+
+            var status = setPackageKey(key);
+            if (status == SUCCESS) {
+              console.log(
+                "Package key stored in claim.secret\nDo not share the key with anyone who is not contributing\n"
+              );
+              resolve();
+            } else {
+              console.log(
+                `Error: Package key could not be written to claim.secret.\nYou can manually create the claim.secret file and add the following text:\n${key}\nIf you were trying to publish a package you can then (after creating the claim.secret file) try to publish again using 'nebula publish'`
+              );
+              reject();
+            }
+          }
+        }
+      })
+      .catch((err) => {
+        reject();
+      });
+  });
+}
+
+function getPackageKey() {
+  return fs.readFileSync(claimKeyPath, "utf8");
+}
+
+function sendPackagePostRequest(packageName, packageKey, fileName, fileContent){
+  return axios.post(apiRoute(`editpackage/${packageName}`), {
+    filename: fileName,
+    filecontent: fileContent
+  }, {
+    headers: {
+      packagekey: packageKey
+    }
+  });
+}
+
+function updateOnlinePackage(configData, key) {
+  // send nebula.conf.json
+  // axios.post(`http://localhost:3000/editpackage/${configData.name}`, {
+  //   filename: "nebula.conf.json",
+  //   filecontent: JSON.stringify(configData, null, 2)
+  // },{
+  //   headers: {
+  //     packagekey: key
+  //   }
+  // })
+  sendPackagePostRequest(configData.name, key, "nebula.conf.json", JSON.stringify(configData, null, 2))
+    .then((r) => {
+      if(r.data == "success"){
+        console.log("nebula.conf.json - uploaded");
+      }else if(r.data == "err:unauth"){
+        console.log("nebula.conf.json - unauthorized request");
+      }else if(r.data == "err:file"){
+        console.log("nebula.conf.json - server file error");
+      }
+    })
+    .catch(() => {});
+
+  // send main code file
+  // send other local code files
+  // send README.md if there is any
+}
+
+function publish() {
+  var configData = getNebulaConfig();
+
+  if (fs.existsSync(claimKeyPath)) {
+    var key = getPackageKey();
+    updateOnlinePackage(configData, key);
+  } else {
+    console.log("Trying to claim the package name...");
+    claim(configData.name)
+      .then(() => {
+        var key = getPackageKey();
+        updateOnlinePackage(configData, key);
+      })
+      .catch(() => {
+        console.log("Error: Publish failed");
+      });
+  }
 }
 
 function help() {
@@ -164,19 +279,17 @@ function promptAndCreateConfig() {
 
 function installPackage(packageName) {
   var currentData = getNebulaConfig();
-  if(currentData.packages.includes(packageName)){ // the package is installed
+  if (currentData.packages.includes(packageName)) {
+    // the package is installed
     console.log(`${packageName} is already installed`);
-  }else{
+  } else {
     axios
       .get(apiRoute("packages/" + packageName))
       .then((res) => {
         if (res.status >= 200 && res.status < 300) {
           // create the package inside the chive_packages folder
           if (fs.existsSync(chivePackagesPath)) {
-            fs.writeFileSync(
-              localPackage(packageName + ".ch"),
-              res.data
-            );
+            fs.writeFileSync(localPackage(packageName + ".ch"), res.data);
           } else {
             fs.mkdirSync(chivePackagesPath);
             fs.writeFileSync(
@@ -193,13 +306,10 @@ function installPackage(packageName) {
 
           // add the package inside the include.ch file
           if (fs.existsSync(includeFilePath)) {
-            var currentInclude = fs.readFileSync(
-              includeFilePath,
-              "utf8"
-            );
+            var currentInclude = fs.readFileSync(includeFilePath, "utf8");
             fs.writeFileSync(
               includeFilePath,
-              currentInclude + "\n" + "./chive_packages/"+packageName + ".ch"
+              currentInclude + "\n" + "./chive_packages/" + packageName + ".ch"
             );
             console.log(packageName + "added to include.ch");
           }
@@ -220,14 +330,17 @@ function uninstallPackage(packageName) {
   setNebulaConfig(currentData);
   console.log(packageName + " removed from nebula.conf.json");
 
-  fs.unlinkSync(
-    localPackage(packageName + ".ch")
-  );
+  fs.unlinkSync(localPackage(packageName + ".ch"));
 
-  if(fs.existsSync(includeFilePath)){
-    var currentIncludeData = fs.readFileSync(includeFilePath, 'utf8').replaceAll('\r', '').split('\n');
-    currentIncludeData = currentIncludeData.filter(item => item != "./chive_packages/"+packageName+".ch");
-    fs.writeFileSync(includeFilePath, currentIncludeData.join('\n'));
+  if (fs.existsSync(includeFilePath)) {
+    var currentIncludeData = fs
+      .readFileSync(includeFilePath, "utf8")
+      .replaceAll("\r", "")
+      .split("\n");
+    currentIncludeData = currentIncludeData.filter(
+      (item) => item != "./chive_packages/" + packageName + ".ch"
+    );
+    fs.writeFileSync(includeFilePath, currentIncludeData.join("\n"));
     console.log(`${packageName} removed from include.ch file`);
   }
 
