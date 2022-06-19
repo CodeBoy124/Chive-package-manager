@@ -44,6 +44,9 @@ if (COM.toLowerCase() == "nebula") {
 } else if (com(2).toLowerCase() == "nebula run") {
   var scriptName = args.slice(2).join(" ");
   runConfigScript(scriptName);
+} else if(com(2).toLowerCase() == "nebula preview"){
+  var packageName = args.slice(2).join(" ");
+  previewPackage(packageName);
 } else if (COM.toLowerCase() == "nebula publish") {
   // NEEDS TO BE DONE LATER ON
   publish();
@@ -69,6 +72,8 @@ nebula i aPackage
 nebula ui aPackage
 
 nebula run scriptName
+
+nebula preview aPackage
 
 (nebula claim) will be used inside nebula publish and claims a title. this will use the sha3-512 hashing algorithm on the server
 nebula publish
@@ -197,8 +202,47 @@ function updateOnlinePackage(configData, key) {
     .catch(() => {});
 
   // send main code file
+  sendPackagePostRequest(configData.name, key, configData.main, fs.readFileSync(path.join(process.cwd(), configData.main), 'utf8'))
+    .then((r) => {
+      if(r.data == "success"){
+        console.log(configData.main+" - uploaded");
+      }else if(r.data == "err:unauth"){
+        console.log(configData.main+" - unauthorized request");
+      }else if(r.data == "err:file"){
+        console.log(configData.main+" - server file error");
+      }
+    })
+    .catch(() => {});
+
   // send other local code files
+  configData.includes.forEach(script => {
+    sendPackagePostRequest(configData.name, key, script, fs.readFileSync(path.join(process.cwd(), script), 'utf8'))
+      .then((r) => {
+        if(r.data == "success"){
+          console.log(script+" - uploaded");
+        }else if(r.data == "err:unauth"){
+          console.log(script+" - unauthorized request");
+        }else if(r.data == "err:file"){
+          console.log(script+" - server file error");
+        }
+      })
+      .catch(() => {});
+  });
+
   // send README.md if there is any
+  if(fs.existsSync(path.join(process.cwd(), "./README.md"))){
+    sendPackagePostRequest(configData.name, key, "README.md", fs.readFileSync(path.join(process.cwd(), "./README.md"), 'utf8'))
+      .then((r) => {
+        if(r.data == "success"){
+          console.log("README.md - uploaded");
+        }else if(r.data == "err:unauth"){
+          console.log("README.md - unauthorized request");
+        }else if(r.data == "err:file"){
+          console.log("README.md - server file error");
+        }
+      })
+      .catch(() => {});
+  }
 }
 
 function publish() {
@@ -362,4 +406,14 @@ function runConfigScript(scriptName) {
     }
     console.log(stdout);
   });
+}
+
+function previewPackage(name){
+  axios.get(apiRoute("preview/"+name))
+    .then((res) => {
+      console.log(res.data); // might need to make a markdown terminal previewer later
+    })
+    .catch((err) => {
+      //
+    });
 }
